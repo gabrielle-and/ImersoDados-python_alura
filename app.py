@@ -2,18 +2,18 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# -------------------------------
+# --------------------------------
 # Configuração da página
-# -------------------------------
+# --------------------------------
 st.set_page_config(
-    page_title="Dashboard de Salários na Área de Dados",
+    page_title="Dashboard de Salários em Dados",
     page_icon="📊",
     layout="wide"
 )
 
-# -------------------------------
-# Carregar dados com cache
-# -------------------------------
+# --------------------------------
+# Carregar dados
+# --------------------------------
 @st.cache_data
 def carregar_dados():
     url = "https://raw.githubusercontent.com/vqrca/dashboard_salarios_dados/refs/heads/main/dados-imersao-final.csv"
@@ -21,9 +21,9 @@ def carregar_dados():
 
 df = carregar_dados()
 
-# -------------------------------
+# --------------------------------
 # Barra lateral
-# -------------------------------
+# --------------------------------
 st.sidebar.header("🔎 Filtros")
 
 anos = sorted(df["ano"].unique())
@@ -38,9 +38,9 @@ contrato_sel = st.sidebar.multiselect("Tipo de contrato", contrato, default=cont
 empresa = sorted(df["tamanho_empresa"].unique())
 empresa_sel = st.sidebar.multiselect("Tamanho da empresa", empresa, default=empresa)
 
-# -------------------------------
+# --------------------------------
 # Filtrar dados
-# -------------------------------
+# --------------------------------
 df_filtrado = df[
     (df["ano"].isin(anos_sel)) &
     (df["senioridade"].isin(senioridade_sel)) &
@@ -48,15 +48,15 @@ df_filtrado = df[
     (df["tamanho_empresa"].isin(empresa_sel))
 ]
 
-# -------------------------------
+# --------------------------------
 # Título
-# -------------------------------
+# --------------------------------
 st.title("📊 Dashboard de Salários na Área de Dados")
-st.markdown("Explore os salários da área de dados utilizando os filtros ao lado.")
+st.markdown("Explore os dados salariais da área de dados usando os filtros à esquerda.")
 
-# -------------------------------
+# --------------------------------
 # Métricas
-# -------------------------------
+# --------------------------------
 st.subheader("📌 Métricas gerais")
 
 if not df_filtrado.empty:
@@ -85,10 +85,10 @@ col2.metric("🏆 Salário máximo", f"${salario_max:,.0f}")
 col3.metric("📄 Total de registros", f"{total:,}")
 col4.metric("💼 Cargo mais frequente", cargo_freq)
 
-# -------------------------------
-# Gráficos
-# -------------------------------
-st.subheader("📊 Análises visuais")
+# --------------------------------
+# Gráficos principais
+# --------------------------------
+st.subheader("📊 Análises Visuais")
 
 col1, col2 = st.columns(2)
 
@@ -131,12 +131,12 @@ with col2:
 
         st.plotly_chart(fig2, use_container_width=True)
 
-# -------------------------------
-# Segunda linha de gráficos
-# -------------------------------
+# --------------------------------
+# Segunda linha
+# --------------------------------
 col3, col4 = st.columns(2)
 
-# Trabalho remoto
+# Tipos de trabalho
 with col3:
     if not df_filtrado.empty:
 
@@ -148,12 +148,12 @@ with col3:
             names="tipo",
             values="quantidade",
             hole=0.5,
-            title="Tipos de trabalho"
+            title="Proporção dos tipos de trabalho"
         )
 
         st.plotly_chart(fig3, use_container_width=True)
 
-# Mapa
+# Mapa mundial
 with col4:
     if not df_filtrado.empty:
 
@@ -176,9 +176,61 @@ with col4:
 
         st.plotly_chart(fig4, use_container_width=True)
 
-# -------------------------------
-# Tabela
-# -------------------------------
+# --------------------------------
+# NOVO gráfico 1
+# Evolução salarial por ano
+# --------------------------------
+st.subheader("📈 Evolução dos salários ao longo dos anos")
+
+if not df_filtrado.empty:
+
+    evolucao = (
+        df_filtrado
+        .groupby("ano")["usd"]
+        .mean()
+        .reset_index()
+    )
+
+    fig5 = px.line(
+        evolucao,
+        x="ano",
+        y="usd",
+        markers=True,
+        title="Salário médio por ano"
+    )
+
+    st.plotly_chart(fig5, use_container_width=True)
+
+# --------------------------------
+# NOVO gráfico 2
+# Salário por senioridade
+# --------------------------------
+st.subheader("🧠 Salários por nível de senioridade")
+
+if not df_filtrado.empty:
+
+    senioridade_salario = (
+        df_filtrado
+        .groupby("senioridade")["usd"]
+        .mean()
+        .sort_values()
+        .reset_index()
+    )
+
+    fig6 = px.bar(
+        senioridade_salario,
+        x="senioridade",
+        y="usd",
+        color="usd",
+        color_continuous_scale="viridis",
+        title="Salário médio por senioridade"
+    )
+
+    st.plotly_chart(fig6, use_container_width=True)
+
+# --------------------------------
+# Tabela final
+# --------------------------------
 st.subheader("📋 Dados detalhados")
 
 st.dataframe(df_filtrado, use_container_width=True)
